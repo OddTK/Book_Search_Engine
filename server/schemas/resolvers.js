@@ -1,6 +1,5 @@
 const { AuthorizationError } = require('apollo-server-express');
-const { AggregationCursor } = require('mongoose');
-const { Book, User } = require('../models');
+const { User } = require('../models');
 const utils = require('../utils/auth');
 
 const resolvers = {
@@ -30,27 +29,21 @@ const resolvers = {
             const token = utils.signToken(user.username, user.email, user._id);
             return (token, user);
         },
-        saveBook: async (_root, { input }, context) => {
-            if (context.user) {
-                const updatedUser = await User.findByIdAndUpdate(
-                { _id: context.user._id },
+        saveBook: async (_root, { input }) => {
+            const updatedUser = await User.findByIdAndUpdate(
+                { _id: User._id },
                 { $addToSet: { savedBooks: input } },
                 { new: true }
             );
             return updatedUser;
-            }
-            throw new AuthorizationError("You must be logged in");
         },
-        removeBook: async (_root, args, context) => {
-            if (context.user) {
+        removeBook: async (_root, { bookId }) => {
                 const updatedUser = await User.findByIdAndUpdate(
-                { _id: context.user._id },
-                { $pull: { savedBooks: { bookId: args.bookId } } },
+                { _id: User._id },
+                { $pull: { savedBooks: { bookId } } },
                 { new: true }
             );
             return updatedUser;
-            }
-            throw new AuthorizationError("You must be logged in");
         },
     },
 }
