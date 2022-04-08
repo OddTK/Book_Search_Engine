@@ -29,7 +29,7 @@ const resolvers = {
             const token = utils.signToken(user.username, user.email, user._id);
             return (token, user);
         },
-        saveBook: async (_root, {})
+        // saveBook: async (_root, {})
     },
 }
 
