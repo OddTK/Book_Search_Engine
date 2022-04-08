@@ -1,41 +1,42 @@
-const express = require('express');
-const {ApolloServer} = require('apollo-server-express');
-const jwt = require('jsonwebtoken');
-const utils = require('./utils/auth');
-const {resolvers, typeDefs,} = require('./schemas');
-const db = require('./config/connection');
+const express = require("express");
+const { ApolloServer } = require("apollo-server-express");
+const path = require("path");
+const { authMiddleware } = require("./utils/auth");
 
-const server = new ApolloServer({
-	resolvers,
-	typeDefs,
-	context: ({req, res}) => {
-		const token = req.headers.authorization;
-
-		// if no token no user is logged in
-		if (token.length === 0) {
-			return req;
-		}
-		try {
-			const {data} = jwt.verify(token, utils.secret);
-			req.user = data;
-		} catch (e) {
-			return {error: 'Invalid token'};
-		}
-		return {
-			req,
-		};
-	},
-});
+const { typeDefs, resolvers } = require("./schemas");
+const db = require("./config/connection");
 
 const PORT = process.env.PORT || 3001;
 const app = express();
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-db.once('open', async () => {
-	await server.start();
-	// creates a /graphql endpoint for our server
-	server.applyMiddleware({ app });
-	app.listen(PORT, () => console.log('Server running on PORT 3001'));
+const server = new ApolloServer({
+	typeDefs,
+	resolvers,
+	context: authMiddleware,
 });
+
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+if (process.env.NODE_ENV === "production") {
+	app.use(express.static(path.join(__dirname, "../client/build")));
+}
+
+app.get("/", (req, res) => {
+	res.sendFile(path.join(__dirname, "../client/build/index.html"));
+});
+
+const startApolloServer = async (typeDefs, resolvers) => {
+	await server.start();
+	server.applyMiddleware({ app });
+
+	db.once("open", () => {
+    app.listen(PORT, () => {
+    console.log(`API server running on port ${PORT}!`);
+    console.log(
+        `Use GraphQL at http://localhost:${PORT}${server.graphqlPath}`
+    );
+});
+});
+};
+
+startApolloServer(typeDefs, resolvers);
