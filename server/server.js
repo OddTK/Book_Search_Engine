@@ -14,19 +14,15 @@ const server = new ApolloServer({
 	context: authMiddleware,
 });
 
-<<<<<<< HEAD
 app.use(express.urlencoded({ extended: false }));
-=======
-app.use(express.urlencoded({ extended: true }));
->>>>>>> 77f4a4e053d7e20edf8cbe9cd8c36b17fd743eae
 app.use(express.json());
 
 if (process.env.NODE_ENV === "production") {
-	app.use(express.static(path.join(__dirname, "../client/build")));
+	app.use(express.static(path.join(__dirname, "../client/dist")));
 }
 
 app.get("/", (req, res) => {
-	res.sendFile(path.join(__dirname, "../client/build/index.html"));
+	res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
 const startApolloServer = async (typeDefs, resolvers) => {
